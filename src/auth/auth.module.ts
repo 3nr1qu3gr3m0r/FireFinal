@@ -14,10 +14,10 @@ import { Usuario } from '../users/entities/user.entity'; // 2. Importar la Entid
     JwtModule.register({
       global: true,
       secret: 'SECRETO_SUPER_SEGURO', 
-      signOptions: { expiresIn: '1d' },
+      signOptions: { expiresIn: '365d' },
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService],
+  providers: [AuthService, JwtModule],
 })
 export class AuthModule {}

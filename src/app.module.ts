@@ -2,19 +2,23 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { MailerModule } from '@nestjs-modules/mailer'; 
 import { ConfigModule } from '@nestjs/config';
+import { FilesModule } from './files/files.module';
 
 // Módulos de la aplicación
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { SeedModule } from './seed/seed.module';
 import { XvAnosModule } from './xv-anos/xv-anos.module';
+import { ProductsModule } from './products/products.module';
+import { SalesModule } from './sales/sales.module';
+import { ClassesModule } from './clases/classes.module';
 
-// Entidades (Solo la de usuario está explícita, las demás se cargan solas)
+// Entidades 
 import { Usuario } from './users/entities/user.entity';
 
 @Module({
   imports: [
-    // 1. Configuración Global (Variables de Entorno)
+    // 1. Configuración Global 
     ConfigModule.forRoot({
       isGlobal: true, 
     }),
@@ -28,7 +32,7 @@ import { Usuario } from './users/entities/user.entity';
       password: process.env.DB_PASS,
       database: process.env.DB_NAME,
       entities: [Usuario], 
-      autoLoadEntities: true, // 👈 ESTO ES CLAVE: Carga las entidades de los módulos importados
+      autoLoadEntities: true, // Gracias a esto, la entidad 'Producto' se carga sola al importar el módulo
       synchronize: true,
     }),
     
@@ -42,7 +46,7 @@ import { Usuario } from './users/entities/user.entity';
         },
       },
       defaults:{
-        from:'"Soporte Fire Inside" <fireinside.sistema@gmail.com>' // Ajusté el nombre para que se vea bien
+        from:'"Soporte Fire Inside" <fireinside.sistema@gmail.com>' 
       },
     }),
 
@@ -50,7 +54,11 @@ import { Usuario } from './users/entities/user.entity';
     AuthModule,
     UsersModule,
     SeedModule,
-    XvAnosModule, // 👈 Aquí está bien, solo una vez
+    XvAnosModule,
+    ProductsModule,
+    SalesModule,
+    FilesModule,
+    ClassesModule,
   ],
   controllers:[],
   providers:[],
