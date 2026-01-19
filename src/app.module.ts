@@ -12,6 +12,9 @@ import { XvAnosModule } from './xv-anos/xv-anos.module';
 import { ProductsModule } from './products/products.module';
 import { SalesModule } from './sales/sales.module';
 import { ClassesModule } from './clases/classes.module';
+import { PlansModule } from './plans/plans.module';
+import { LevelsModule } from './levels/levels.module';
+import { BadgesModule } from './badges/badges.module';
 
 // Entidades 
 import { Usuario } from './users/entities/user.entity';
@@ -59,6 +62,9 @@ import { Usuario } from './users/entities/user.entity';
     SalesModule,
     FilesModule,
     ClassesModule,
+    PlansModule,
+    LevelsModule,
+    BadgesModule,
   ],
   controllers:[],
   providers:[],
