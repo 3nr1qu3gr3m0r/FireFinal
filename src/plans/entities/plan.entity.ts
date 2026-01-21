@@ -1,5 +1,6 @@
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToMany, JoinTable } from 'typeorm';
-import { Class } from '../../clases/entities/class.entity';
+// ⚠️ IMPORTANTE: Verifica si tu carpeta se llama 'classes' (mi código) o 'clases' (tu código)
+import { Class } from '../../clases/entities/class.entity'; 
 
 @Entity('planes')
 export class Plan {
@@ -22,9 +23,8 @@ export class Plan {
   cantidad_clases: number;
 
   // 🔗 RELACIÓN MUCHOS A MUCHOS
-  // "Un plan incluye muchas clases"
   @ManyToMany(() => Class)
-  @JoinTable({ name: 'planes_clases' }) // Tabla intermedia automática
+  @JoinTable({ name: 'planes_clases' }) 
   clases_incluidas: Class[];
 
   @CreateDateColumn()

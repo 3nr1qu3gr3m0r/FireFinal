@@ -4,17 +4,18 @@ import { SalesService } from './sales.service';
 import { SalesController } from './sales.controller';
 import { Sale } from './entities/sale.entity';
 import { SaleItem } from './entities/sale-item.entity';
-import { ProductsModule } from '../products/products.module'; // Importamos productos para poder venderlos
-import { Usuario } from '../users/entities/user.entity'; // Importamos usuario para el vendedor/comprador
+import { UserPackage } from './entities/user-package.entity';
+import { Usuario } from '../users/entities/user.entity';
+import { Producto } from '../products/entities/product.entity';
+import { Class } from '../clases/entities/class.entity'; // 👈
+import { Plan } from '../plans/entities/plan.entity';   // 👈 Necesitas crear el modulo de planes si no existe
 
 @Module({
   imports: [
-    // Registramos las entidades PROPIAS de este módulo
-    TypeOrmModule.forFeature([Sale, SaleItem, Usuario]), 
-    // Importamos ProductsModule para usar su repositorio y servicio exportado
-    ProductsModule 
+    TypeOrmModule.forFeature([Sale, SaleItem, Usuario, UserPackage, Producto, Class, Plan]), 
   ],
   controllers: [SalesController],
   providers: [SalesService],
+  exports: [SalesService]
 })
 export class SalesModule {}

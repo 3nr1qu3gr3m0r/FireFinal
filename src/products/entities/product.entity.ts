@@ -29,4 +29,13 @@ export class Producto {
   // a menos que configures onDelete: 'CASCADE' (que no se recomienda para historial financiero).
   @OneToMany(() => SaleItem, (saleItem) => saleItem.producto)
   ventas_donde_aparece: SaleItem[];
+
+  @Column({ type: 'boolean', default: false })
+  es_paquete: boolean; // ¿Es un paquete de clases?
+
+  @Column({ type: 'int', nullable: true })
+  numero_clases: number | null; // Ej: 10 clases
+
+  @Column({ type: 'int', nullable: true })
+  dias_vigencia: number | null; // Ej: 30 días
 }

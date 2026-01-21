@@ -1,7 +1,9 @@
-import { Controller, Get, Post, Body, Put, Param, Delete, ParseIntPipe } from '@nestjs/common';
+import { Controller, Get, Post, Body, Put, Param, Delete, ParseIntPipe, UseGuards } from '@nestjs/common';
 import { LevelsService } from './levels.service';
 import { CreateLevelDto } from './dto/create-level.dto';
 import { UpdateLevelDto } from './dto/update-level.dto';
+import { AssignLevelDto } from './dto/assign-level.dto'; // 👈 IMPORTAR
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 @Controller('levels')
 export class LevelsController {
@@ -15,6 +17,12 @@ export class LevelsController {
   @Get()
   findAll() {
     return this.levelsService.findAll();
+  }
+
+  @Post('assign')
+  @UseGuards(JwtAuthGuard) // Proteger ruta
+  assignLevel(@Body() assignLevelDto: AssignLevelDto) {
+    return this.levelsService.assignLevel(assignLevelDto);
   }
 
   @Put(':id')

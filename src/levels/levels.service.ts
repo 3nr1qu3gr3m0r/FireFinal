@@ -4,11 +4,14 @@ import { Repository } from 'typeorm';
 import { Level } from './entities/level.entity';
 import { CreateLevelDto } from './dto/create-level.dto';
 import { UpdateLevelDto } from './dto/update-level.dto';
+import { AssignLevelDto } from './dto/assign-level.dto';
+import { Usuario } from '../users/entities/user.entity';
 
 @Injectable()
 export class LevelsService {
   constructor(
     @InjectRepository(Level) private levelRepo: Repository<Level>,
+    @InjectRepository(Usuario) private userRepo: Repository<Usuario>,
   ) {}
 
   async create(dto: CreateLevelDto) {
@@ -35,5 +38,17 @@ export class LevelsService {
     const result = await this.levelRepo.delete(id);
     if (result.affected === 0) throw new NotFoundException(`Nivel #${id} no encontrado`);
     return { message: 'Nivel eliminado correctamente' };
+  }
+
+  async assignLevel(dto: AssignLevelDto) {
+    const usuario = await this.userRepo.findOneBy({ id: dto.usuario_id });
+    if (!usuario) throw new NotFoundException('Usuario no encontrado');
+
+    const nivel = await this.levelRepo.findOneBy({ id: dto.nivel_id });
+    if (!nivel) throw new NotFoundException('Nivel no encontrado');
+
+    usuario.nivel = nivel;
+    await this.userRepo.save(usuario);
+    return { message: `Nivel '${nivel.nombre}' asignado a ${usuario.nombre_completo}` };
   }
 }
