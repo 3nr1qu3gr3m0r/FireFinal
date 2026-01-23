@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn } from 'typeorm';
 import { XvContract } from './xv-contract.entity';
 
 @Entity('xv_concepts')
@@ -16,8 +16,13 @@ export class XvConcept {
   clientCost: number; // Venta
 
   @Column('decimal', { precision: 10, scale: 2, default: 0 })
-  paid: number; // Cuánto se ha abonado a este concepto específico
+  paid: number;
 
-  @ManyToOne(() => XvContract, (contract) => contract.concepts, { onDelete: 'CASCADE' })
+  // 👇 CORRECCIÓN: Agregamos @JoinColumn
+  @ManyToOne(() => XvContract, (contract) => contract.concepts, { 
+    onDelete: 'CASCADE',
+    orphanedRowAction: 'delete'
+  })
+  @JoinColumn({ name: 'contractId' }) // Vincula explícitamente la columna FK
   contract: XvContract;
 }

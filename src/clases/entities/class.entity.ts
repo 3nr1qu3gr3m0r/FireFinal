@@ -1,4 +1,7 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import { 
+  Entity, PrimaryGeneratedColumn, Column, 
+  CreateDateColumn, UpdateDateColumn, DeleteDateColumn 
+} from 'typeorm';
 
 export enum NivelClase {
   INICIACION = 'iniciacion',
@@ -23,7 +26,6 @@ export class Class {
   @Column()
   maestro: string;
 
-  // 💰 NUEVO CAMPO: PRECIO
   @Column({ type: 'decimal', precision: 10, scale: 2 })
   precio: number;
 
@@ -42,9 +44,20 @@ export class Class {
   @Column({ type: 'varchar', nullable: true })
   imagen: string;
 
+  // --- AUDITORÍA AUTOMÁTICA ---
   @CreateDateColumn()
   createdAt: Date;
 
   @UpdateDateColumn()
   updatedAt: Date;
+
+  @DeleteDateColumn() 
+  deletedAt: Date; // 👈 Esto activa el Soft Delete
+
+  // --- AUDITORÍA DE USUARIOS ---
+  @Column({ type: 'varchar', nullable: true })
+  updatedBy: string;
+
+  @Column({ type: 'varchar', nullable: true })
+  deletedBy: string | null;
 }

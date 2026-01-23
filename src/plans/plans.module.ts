@@ -3,13 +3,14 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { PlansService } from './plans.service';
 import { PlansController } from './plans.controller';
 import { Plan } from './entities/plan.entity';
-// Verifica la ruta de Class según tu carpeta real ('classes' o 'clases')
-import { Class } from '../clases/entities/class.entity'; 
+import { Class } from '../clases/entities/class.entity'; // 👈 Importamos entidad Clase
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Plan, Class])], 
+  imports: [
+    TypeOrmModule.forFeature([Plan, Class]) // 👈 Registramos ambas
+  ],
   controllers: [PlansController],
   providers: [PlansService],
-  exports: [TypeOrmModule] // 👈 ¡ESTO ES CRÍTICO! Permite usar PlanRepository en otros módulos
+  exports: [PlansService], // Exportamos por si Ventas lo necesita
 })
 export class PlansModule {}

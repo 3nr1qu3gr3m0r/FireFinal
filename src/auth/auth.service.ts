@@ -84,8 +84,14 @@ export class AuthService {
     };
   }
 
-  private generarJwt(usuario: Usuario) {
-    const payload = { correo: usuario.correo, sub: usuario.id, rol: usuario.rol };
+private generarJwt(usuario: Usuario) {
+    // 👇 CAMBIO: Agregamos 'nombre' al payload
+    const payload = { 
+      sub: usuario.id, 
+      correo: usuario.correo, 
+      rol: usuario.rol, 
+      nombre: usuario.nombre_completo // 👈 ¡ESTO FALTABA!
+    };
     return this.jwtService.sign(payload);
   }
 

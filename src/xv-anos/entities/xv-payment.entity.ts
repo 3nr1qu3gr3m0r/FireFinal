@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, CreateDateColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn } from 'typeorm';
 import { XvContract } from './xv-contract.entity';
 
 @Entity('xv_payments')
@@ -13,8 +13,12 @@ export class XvPayment {
   date: Date;
 
   @Column()
-  conceptName: string; // Guardamos el nombre como referencia histórica (ej: "General" o "Vestuario")
+  conceptName: string;
 
-  @ManyToOne(() => XvContract, (contract) => contract.payments, { onDelete: 'CASCADE' })
+  // 👇 CORRECCIÓN: Agregamos @JoinColumn
+  @ManyToOne(() => XvContract, (contract) => contract.payments, { 
+    onDelete: 'CASCADE' 
+  })
+  @JoinColumn({ name: 'contractId' }) 
   contract: XvContract;
 }

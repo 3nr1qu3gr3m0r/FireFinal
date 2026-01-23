@@ -1,10 +1,15 @@
-import { IsString, IsNotEmpty, IsNumber, Min, IsArray, ArrayMinSize } from 'class-validator';
+import { IsString, IsNotEmpty, IsNumber, Min, IsArray, ArrayMinSize, IsOptional } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class CreatePlanDto {
   @IsString({ message: 'El nombre es obligatorio' })
   @IsNotEmpty()
   nombre: string;
+
+  // Agregamos descripción como opcional para no romper el frontend que la usa
+  @IsString() 
+  @IsOptional()
+  descripcion?: string;
 
   @IsNumber({}, { message: 'El precio debe ser un número' })
   @Min(1, { message: 'El precio debe ser mayor a 0' })

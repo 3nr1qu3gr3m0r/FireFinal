@@ -7,6 +7,7 @@ import { XvPayment } from './entities/xv-payment.entity';
 import { CreateContractDto } from './dto/create-contract.dto';
 import { AddConceptDto } from './dto/add-concept.dto';
 import { AddPaymentDto } from './dto/add-payment.dto';
+import { UpdateContractDto } from './dto/update-contract.dto'; // Asegúrate de tener este import
 
 @Injectable()
 export class XvAnosService {
@@ -19,6 +20,7 @@ export class XvAnosService {
     @InjectRepository(XvPayment) private paymentRepo: Repository<XvPayment>,
   ) {}
 
+  // Utilidad para validar dinero
   private validateAndRoundMoney(amount: number, label: string, allowZero = false): number {
     let num = Number(amount);
     if (isNaN(num)) throw new BadRequestException(`${label} debe ser un número válido.`);
@@ -33,16 +35,8 @@ export class XvAnosService {
     return num;
   }
 
-  // --- 1. CREAR CONTRATO ---
   async create(createDto: CreateContractDto) {
-    const eventDate = new Date(createDto.date);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    if (eventDate < today) throw new BadRequestException("La fecha del evento no puede ser en el pasado.");
-
     const total = this.validateAndRoundMoney(createDto.contractTotal, "El costo del paquete");
-
     const contract = this.contractRepo.create({
       studentName: createDto.studentName,
       eventDate: createDto.date, 
@@ -51,50 +45,89 @@ export class XvAnosService {
     return this.contractRepo.save(contract);
   }
 
-  // --- 2. AGREGAR CONCEPTO ---
-  async addConcept(contractId: string, dto: AddConceptDto) {
-    const contract = await this.findOne(contractId, ['concepts']);
+  async findAll() { 
+      return this.contractRepo.find({ order: { createdAt: 'DESC' } }); 
+  }
+
+  async findOne(id: string, relations: string[] = []) {
+    // Si relations viene vacío, cargamos por defecto concepts y payments gracias a eager: true en la entidad
+    const contract = await this.contractRepo.findOne({ 
+        where: { id }, 
+        relations: relations.length > 0 ? relations : ['concepts', 'payments']
+    });
     
+    if (!contract) throw new NotFoundException('Contrato no encontrado');
+    return contract;
+  }
+
+  async update(id: string, updateDto: UpdateContractDto) {
+    const contract = await this.findOne(id);
+    if (updateDto.date) contract.eventDate = new Date(updateDto.date);
+    if (updateDto.contractTotal !== undefined) contract.contractTotal = this.validateAndRoundMoney(updateDto.contractTotal, "Nuevo Total");
+    if (updateDto.studentName) contract.studentName = updateDto.studentName;
+    return this.contractRepo.save(contract);
+  }
+
+  async remove(id: string) {
+    const contract = await this.findOne(id);
+    await this.contractRepo.remove(contract);
+    return { message: 'Contrato eliminado correctamente' };
+  }
+
+  // --- AGREGAR CONCEPTO ---
+  async addConcept(contractId: string, dto: AddConceptDto) {
+    // 1. Buscamos el contrato
+    const contract = await this.findOne(contractId);
+    
+    // 2. Validamos montos
     const realCost = this.validateAndRoundMoney(dto.realCost, "El costo real", true);
     const clientCost = this.validateAndRoundMoney(dto.clientCost, "El precio cliente", true);
 
     if (realCost === 0 && clientCost === 0) {
-        throw new BadRequestException("El concepto debe tener valor (gasto o venta).");
+        throw new BadRequestException("El concepto debe tener valor.");
     }
 
+    // 3. Validamos presupuesto
     const contractTotal = Number(contract.contractTotal);
-    const currentAllocated = contract.concepts.reduce((sum, c) => sum + Number(c.clientCost), 0);
+    const currentAllocated = contract.concepts ? contract.concepts.reduce((sum, c) => sum + Number(c.clientCost), 0) : 0;
     const availableBudget = Math.round((contractTotal - currentAllocated) * 100) / 100;
 
     if (clientCost > availableBudget) {
         throw new BadRequestException(`Solo quedan $${availableBudget} disponibles en el contrato.`);
     }
 
+    // 4. Creamos y guardamos el concepto
     const concept = this.conceptRepo.create({
       name: dto.name,
       realCost: realCost,
       clientCost: clientCost,
       paid: 0,
-      contract,
+      contract: contract, // Asignamos la relación explícitamente
     });
     
-    return this.conceptRepo.save(concept);
+    await this.conceptRepo.save(concept);
+
+    // 5. Retornamos el contrato actualizado para que el frontend lo vea de inmediato
+    return this.findOne(contractId);
   }
 
-  // --- 3. AGREGAR PAGO ---
+  // --- AGREGAR PAGO ---
   async addPayment(contractId: string, dto: AddPaymentDto) {
-    const contract = await this.findOne(contractId, ['concepts']);
+    const contract = await this.findOne(contractId);
     
     const amountToPay = this.validateAndRoundMoney(dto.amount, "El abono");
     const paymentDate = new Date(dto.date);
-    const contractCreationDate = new Date(contract.createdAt);
-    contractCreationDate.setHours(0,0,0,0); 
-
+    
+    // Validar fecha contra creación
+    const contractCreationDate = contract.createdAt ? new Date(contract.createdAt) : new Date();
+    contractCreationDate.setHours(0,0,0,0);
     if (paymentDate < contractCreationDate) {
-        throw new BadRequestException("La fecha es anterior a la creación del contrato.");
+         // Opcional: permitir fechas pasadas si es migración de datos, si no, descomentar:
+         // throw new BadRequestException("La fecha es anterior al contrato.");
     }
 
-    const totalPaidGlobal = contract.concepts.reduce((sum, c) => sum + Number(c.paid), 0);
+    // Validar deuda global
+    const totalPaidGlobal = contract.concepts ? contract.concepts.reduce((sum, c) => sum + Number(c.paid), 0) : 0;
     const contractTotal = Number(contract.contractTotal);
     const globalRemaining = Math.round((contractTotal - totalPaidGlobal) * 100) / 100;
 
@@ -106,8 +139,8 @@ export class XvAnosService {
 
     if (dto.conceptId === 'general') {
       let remaining = amountToPay;
-      // Ordenamos para priorizar (si los IDs son numéricos sirve, si son UUID no afecta mucho el sort simple)
-      const conceptsToPay = contract.concepts; 
+      // Usamos los conceptos cargados
+      const conceptsToPay = contract.concepts || []; 
 
       for (const concept of conceptsToPay) {
         const clientCost = Number(concept.clientCost);
@@ -124,15 +157,12 @@ export class XvAnosService {
         }
       }
     } else {
-      // 🔥 CORRECCIÓN: Comparación segura de IDs (String vs String)
       const targetConcept = contract.concepts.find(c => String(c.id) === String(dto.conceptId));
-      
-      if (!targetConcept) throw new NotFoundException("Concepto no encontrado en este contrato.");
+      if (!targetConcept) throw new NotFoundException("Concepto no encontrado.");
       
       const specificDebt = Math.round((Number(targetConcept.clientCost) - Number(targetConcept.paid)) * 100) / 100;
-      
       if (amountToPay > specificDebt) {
-        throw new BadRequestException(`El abono supera la deuda del concepto ($${specificDebt}).`);
+        throw new BadRequestException(`El abono supera la deuda del concepto.`);
       }
       
       targetConcept.paid = Number(targetConcept.paid) + amountToPay;
@@ -144,25 +174,11 @@ export class XvAnosService {
       amount: amountToPay,
       date: dto.date,
       conceptName: conceptNameRecord,
-      contract,
-    });
-    await this.paymentRepo.save(payment);
-
-    return this.findOne(contractId, ['concepts', 'payments']);
-  }
-
-  async findAll() { 
-      return this.contractRepo.find({ order: { createdAt: 'DESC' } }); 
-  }
-
-  // 🔥 CORRECCIÓN CRÍTICA: Quitamos Number(id)
-  async findOne(id: string, relations: string[] = []) {
-    const contract = await this.contractRepo.findOne({ 
-        where: { id }, // Pasamos el string directo como pide la entidad
-        relations 
+      contract: contract,
     });
     
-    if (!contract) throw new NotFoundException('Contrato no encontrado');
-    return contract;
+    await this.paymentRepo.save(payment);
+
+    return this.findOne(contractId);
   }
 }

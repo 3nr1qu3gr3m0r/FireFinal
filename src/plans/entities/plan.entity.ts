@@ -1,35 +1,54 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToMany, JoinTable } from 'typeorm';
-// ⚠️ IMPORTANTE: Verifica si tu carpeta se llama 'classes' (mi código) o 'clases' (tu código)
-import { Class } from '../../clases/entities/class.entity'; 
+import { 
+  Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, 
+  UpdateDateColumn, DeleteDateColumn, ManyToMany, JoinTable 
+} from 'typeorm';
+import { Class } from '../../clases/entities/class.entity'; // Asegúrate de que la ruta sea correcta
 
-@Entity('planes')
+@Entity('plans')
 export class Plan {
   @PrimaryGeneratedColumn()
   id: number;
 
   @Column()
-  nombre: string;
+  nombre: string; // 👈 Cambiado de 'name' a 'nombre'
 
-  // 💰 Precio del plan
-  @Column({ type: 'decimal', precision: 10, scale: 2 })
+  @Column('text', { nullable: true })
+  descripcion: string;
+
+  @Column('decimal', { precision: 10, scale: 2 })
   precio: number;
 
-  // 📅 Cuántos días dura (ej: 30 para mensual)
-  @Column({ type: 'int' })
-  vigencia_dias: number;
-
-  // 🎟️ Número de clases (-1 podría ser ilimitado, pero usaremos int normal por ahora)
-  @Column({ type: 'int' })
+  @Column('int')
   cantidad_clases: number;
 
-  // 🔗 RELACIÓN MUCHOS A MUCHOS
-  @ManyToMany(() => Class)
-  @JoinTable({ name: 'planes_clases' }) 
-  clases_incluidas: Class[];
+  @Column('int')
+  vigencia_dias: number;
 
+  @Column({ default: true })
+  isActive: boolean;
+
+  // 👇 RELACIÓN: Un plan incluye muchas clases
+  @ManyToMany(() => Class)
+  @JoinTable({
+    name: 'plan_classes', // Nombre de la tabla intermedia
+    joinColumn: { name: 'plan_id', referencedColumnName: 'id' },
+    inverseJoinColumn: { name: 'class_id', referencedColumnName: 'id' },
+  })
+  clases: Class[];
+
+  // --- AUDITORÍA ---
   @CreateDateColumn()
   createdAt: Date;
 
   @UpdateDateColumn()
   updatedAt: Date;
+
+  @DeleteDateColumn() 
+  deletedAt: Date; 
+
+  @Column({ type: 'varchar', nullable: true })
+  updatedBy: string;
+
+  @Column({ type: 'varchar', nullable: true })
+  deletedBy: string | null;
 }

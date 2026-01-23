@@ -13,9 +13,12 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     });
   }
 
-  // Esto se ejecuta si el token es válido
   async validate(payload: any) {
-    // Lo que retornes aquí se inyecta en req.user
-    return { id: payload.sub, correo: payload.correo, rol: payload.rol };
+    return { 
+      id: payload.sub, 
+      correo: payload.correo, 
+      rol: payload.rol,
+      nombre: payload.nombre // 👈 Ahora sí lo leemos del token
+    };
   }
 }

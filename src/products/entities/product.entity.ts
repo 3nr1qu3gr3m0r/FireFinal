@@ -1,7 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, OneToMany } from 'typeorm';
-// Importamos la entidad de detalle de venta para hacer la relación inversa (opcional pero recomendada)
-// Nota: Usamos 'import type' o require circular si SaleItem está en otro módulo, 
-// pero en NestJS suele funcionar bien si la ruta es correcta.
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, OneToMany, DeleteDateColumn } from 'typeorm';
 import { SaleItem } from '../../sales/entities/sale-item.entity';
 
 @Entity('productos')
@@ -18,24 +15,37 @@ export class Producto {
   @Column({ type: 'enum', enum: ['academia', 'sens'], default: 'academia' })
   tienda: string;
 
+  // --- CAMPOS DE AUDITORÍA ---
+
   @CreateDateColumn()
   createdAt: Date;
+
+  @Column({ type: 'varchar', nullable: true })
+  createdBy: string; // ¿Quién lo creó?
 
   @UpdateDateColumn()
   updatedAt: Date;
 
-  // 👇 RELACIÓN INVERSA IMPORTANTE
-  // Esto protege tus datos: No podrás borrar un producto "a la fuerza" si ya existen ventas históricas de él,
-  // a menos que configures onDelete: 'CASCADE' (que no se recomienda para historial financiero).
+  @Column({ type: 'varchar', nullable: true })
+  updatedBy: string; // ¿Quién lo editó?
+
+  @DeleteDateColumn()
+  deletedAt: Date; // Fecha de borrado (Soft Delete)
+
+  @Column({ type: 'varchar', nullable: true })
+  deletedBy: string; // ¿Quién lo borró?
+
+  // ---------------------------
+
   @OneToMany(() => SaleItem, (saleItem) => saleItem.producto)
   ventas_donde_aparece: SaleItem[];
 
   @Column({ type: 'boolean', default: false })
-  es_paquete: boolean; // ¿Es un paquete de clases?
+  es_paquete: boolean; 
 
   @Column({ type: 'int', nullable: true })
-  numero_clases: number | null; // Ej: 10 clases
+  numero_clases: number | null; 
 
   @Column({ type: 'int', nullable: true })
-  dias_vigencia: number | null; // Ej: 30 días
+  dias_vigencia: number | null; 
 }
