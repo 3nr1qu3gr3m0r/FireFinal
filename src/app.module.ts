@@ -16,6 +16,8 @@ import { PlansModule } from './plans/plans.module';
 import { LevelsModule } from './levels/levels.module';
 import { BadgesModule } from './badges/badges.module';
 import { BookingsModule } from './bookings/bookings.module';
+import { MovementsModule } from './movements/movements.module';
+import { AnnouncementsModule } from './announcements/announcements.module';
 
 // Entidades 
 import { Usuario } from './users/entities/user.entity';
@@ -67,6 +69,8 @@ import { Usuario } from './users/entities/user.entity';
     LevelsModule,
     BadgesModule,
     BookingsModule,
+    MovementsModule,
+    AnnouncementsModule,
   ],
   controllers:[],
   providers:[],

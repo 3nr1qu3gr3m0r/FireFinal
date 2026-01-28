@@ -8,7 +8,8 @@ import {
   ForbiddenException, 
   Param, 
   Delete, 
-  Patch 
+  Patch,
+  ParseIntPipe // 👈 Agregado para validar el ID numérico
 } from '@nestjs/common';
 import { SalesService } from './sales.service';
 import { CreateSaleDto } from './dto/create-sale.dto';
@@ -19,23 +20,19 @@ export class SalesController {
   constructor(private readonly salesService: SalesService) {}
 
   // --- CREAR VENTA (Registrar) ---
-  // Permitido: Admin y Recepcionista
   @Post()
   @UseGuards(JwtAuthGuard) 
   create(@Body() createSaleDto: CreateSaleDto, @Req() req) {
-    const userRole = req.user.rol;
+    const userRole = req.user.rol; // "rol" viene del JwtStrategy
 
-    // Validamos que sea Admin o Recepcionista
     if (userRole !== 'admin' && userRole !== 'recepcionista') {
       throw new ForbiddenException('No tienes permisos para registrar ventas.');
     }
     
-    // Pasamos el usuario (req.user contiene id, correo, rol gracias a JwtStrategy)
     return this.salesService.create(createSaleDto, req.user);
   }
 
   // --- VER HISTORIAL DE VENTAS ---
-  // Permitido: SOLO Admin
   @Get()
   @UseGuards(JwtAuthGuard)
   findAll(@Req() req) {
@@ -48,29 +45,39 @@ export class SalesController {
     return this.salesService.findAll();
   }
 
-  // --- MODIFICAR VENTA (Opcional, si tienes el método en el servicio) ---
-  // Permitido: SOLO Admin
+  // 👇 --- NUEVO: CANCELAR PAQUETE (SOLO ADMIN) --- 👇
+  @Delete('packages/:id')
+  @UseGuards(JwtAuthGuard)
+  cancelPackage(
+    @Param('id', ParseIntPipe) id: number,
+    @Req() req
+  ) {
+    // 1. Validación Estricta de Rol
+    if (req.user.rol !== 'admin') {
+        throw new ForbiddenException('SOLO el administrador puede cancelar/eliminar paquetes.');
+    }
+
+    // 2. Llamada al servicio pasando el usuario para auditoría
+    return this.salesService.cancelPackage(id, req.user);
+  }
+
+  // --- MODIFICAR VENTA ---
   @Patch(':id')
   @UseGuards(JwtAuthGuard)
   update(@Param('id') id: string, @Body() updateData: any, @Req() req) {
     if (req.user.rol !== 'admin') {
         throw new ForbiddenException('Solo el administrador puede modificar ventas.');
     }
-    // Asegúrate de tener update en tu servicio si vas a usar esto
-    // return this.salesService.update(+id, updateData);
     return { message: 'Función de actualización reservada para Admin' };
   }
 
-  // --- ELIMINAR VENTA ---
-  // Permitido: SOLO Admin
+  // --- ELIMINAR VENTA COMPLETA ---
   @Delete(':id')
   @UseGuards(JwtAuthGuard)
   remove(@Param('id') id: string, @Req() req) {
     if (req.user.rol !== 'admin') {
         throw new ForbiddenException('Solo el administrador puede eliminar ventas.');
     }
-    // Asegúrate de tener remove en tu servicio
-    // return this.salesService.remove(+id); 
     return { message: 'Venta eliminada (simulado, implementar en servicio)' };
   }
 }

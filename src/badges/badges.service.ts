@@ -14,25 +14,59 @@ export class BadgesService {
     @InjectRepository(Usuario) private userRepo: Repository<Usuario>,
   ) {}
 
-  async create(dto: CreateBadgeDto) {
-    const badge = this.badgeRepo.create(dto);
+  // 🔹 Helper para formatear la firma de auditoría
+  private getAuditSignature(user: any): string {
+    // Si por alguna razón no viene el nombre, ponemos "Desconocido"
+    const nombre = user.nombre || 'Desconocido';
+    const id = user.id || '?';
+    return `${nombre} (ID: ${id})`;
+  }
+
+  // --- CREAR ---
+  async create(dto: CreateBadgeDto, user: any) {
+    const badge = this.badgeRepo.create({
+      ...dto,
+      isActive: true,
+      // ✍️ Guardamos Nombre + ID
+      createdBy: this.getAuditSignature(user) 
+    });
     return await this.badgeRepo.save(badge);
   }
 
+  // --- LEER ---
   findAll() {
-    return this.badgeRepo.find({ order: { id: 'DESC' } });
+    return this.badgeRepo.find({ 
+      where: { isActive: true }, 
+      order: { id: 'DESC' } 
+    });
   }
 
-  async update(id: number, dto: UpdateBadgeDto) {
-    const badge = await this.badgeRepo.preload({ id, ...dto });
+  // --- ACTUALIZAR ---
+  async update(id: number, dto: UpdateBadgeDto, user: any) {
+    const badge = await this.badgeRepo.preload({ 
+      id, 
+      ...dto,
+      // ✍️ Guardamos Nombre + ID
+      updatedBy: this.getAuditSignature(user) 
+    });
+    
     if (!badge) throw new NotFoundException(`Insignia #${id} no encontrada`);
     return this.badgeRepo.save(badge);
   }
 
-  async remove(id: number) {
-    const result = await this.badgeRepo.delete(id);
-    if (result.affected === 0) throw new NotFoundException(`Insignia #${id} no encontrada`);
-    return { message: 'Insignia eliminada' };
+  // --- ELIMINAR (Soft Delete) ---
+  async remove(id: number, user: any) {
+    const badge = await this.badgeRepo.findOneBy({ id });
+    if (!badge) throw new NotFoundException(`Insignia #${id} no encontrada`);
+
+    badge.isActive = false;
+    // ✍️ Guardamos Nombre + ID
+    badge.deletedBy = this.getAuditSignature(user); 
+    
+    await this.badgeRepo.save(badge); 
+    await this.badgeRepo.softDelete(id); 
+
+    return { message: 'Insignia eliminada correctamente' };
   }
 
   async assignBadges(dto: AssignBadgesDto) {

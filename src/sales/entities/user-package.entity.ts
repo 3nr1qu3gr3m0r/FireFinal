@@ -1,6 +1,6 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, CreateDateColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, CreateDateColumn, UpdateDateColumn, DeleteDateColumn } from 'typeorm';
 import { Usuario } from '../../users/entities/user.entity';
-import { Plan } from '../../plans/entities/plan.entity'; // 👈 Asegúrate que la ruta sea correcta
+import { Plan } from '../../plans/entities/plan.entity';
 import { Producto } from '../../products/entities/product.entity';
 import { Sale } from './sale.entity';
 
@@ -13,7 +13,6 @@ export class UserPackage {
   @JoinColumn({ name: 'usuario_id' })
   usuario: Usuario;
 
-  // 👇 ESTO ES LO QUE TE FALTA PARA CORREGIR LOS ERRORES DE LÍNEA 95 Y 126
   @ManyToOne(() => Plan, { nullable: true })
   @JoinColumn({ name: 'plan_id' })
   plan: Plan | null;
@@ -48,6 +47,18 @@ export class UserPackage {
   fecha_activacion: Date;
 
   @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
-saldo_pendiente: number;
+  saldo_pendiente: number;
 
+  // 👇 LO QUE AGREGAMOS PARA AUDITORÍA Y BORRADO LÓGICO
+  @Column({ nullable: true })
+  cancelledBy: string; // Quién lo canceló
+
+  @Column({ nullable: true })
+  deletedBy: string; // Auditoría estándar
+
+  @UpdateDateColumn()
+  updatedAt: Date;
+
+  @DeleteDateColumn()
+  deletedAt: Date;
 }

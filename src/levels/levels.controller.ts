@@ -1,37 +1,51 @@
-import { Controller, Get, Post, Body, Put, Param, Delete, ParseIntPipe, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Put, Param, Delete, ParseIntPipe, UseGuards, Request } from '@nestjs/common';
 import { LevelsService } from './levels.service';
 import { CreateLevelDto } from './dto/create-level.dto';
 import { UpdateLevelDto } from './dto/update-level.dto';
-import { AssignLevelDto } from './dto/assign-level.dto'; // 👈 IMPORTAR
+import { AssignLevelDto } from './dto/assign-level.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { RolesGuard } from '../auth/roles.guard';
+import { Roles } from '../auth/roles.decorator';
 
 @Controller('levels')
+@UseGuards(JwtAuthGuard, RolesGuard) // 🔒 Bloqueo general
 export class LevelsController {
   constructor(private readonly levelsService: LevelsService) {}
 
   @Post()
-  create(@Body() createLevelDto: CreateLevelDto) {
-    return this.levelsService.create(createLevelDto);
+  @Roles('admin')
+  create(@Body() createLevelDto: CreateLevelDto, @Request() req: any) {
+    return this.levelsService.create(createLevelDto, req.user);
   }
 
   @Get()
+  // Si los alumnos necesitan ver los niveles, quita @Roles('admin') de aquí.
   findAll() {
     return this.levelsService.findAll();
   }
 
   @Post('assign')
-  @UseGuards(JwtAuthGuard) // Proteger ruta
+  @Roles('admin')
   assignLevel(@Body() assignLevelDto: AssignLevelDto) {
     return this.levelsService.assignLevel(assignLevelDto);
   }
 
   @Put(':id')
-  update(@Param('id', ParseIntPipe) id: number, @Body() updateLevelDto: UpdateLevelDto) {
-    return this.levelsService.update(id, updateLevelDto);
+  @Roles('admin')
+  update(
+    @Param('id', ParseIntPipe) id: number, 
+    @Body() updateLevelDto: UpdateLevelDto,
+    @Request() req: any
+  ) {
+    return this.levelsService.update(id, updateLevelDto, req.user);
   }
 
   @Delete(':id')
-  remove(@Param('id', ParseIntPipe) id: number) {
-    return this.levelsService.remove(id);
+  @Roles('admin')
+  remove(
+    @Param('id', ParseIntPipe) id: number,
+    @Request() req: any
+  ) {
+    return this.levelsService.remove(id, req.user);
   }
 }

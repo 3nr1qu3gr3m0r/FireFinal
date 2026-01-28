@@ -57,4 +57,6 @@ export class Sale {
   // --- DETALLES ---
   @OneToMany(() => SaleItem, (item) => item.venta, { cascade: true })
   items: SaleItem[];
+
+  
 }
